@@ -84,6 +84,8 @@ func action(c *cli.Context) error {
 			logger.Infof("Cloning %s", proj)
 			cmd := exec.Command("git", "clone", fmt.Sprintf("git@%s:%s/%s.git", host, group, proj))
 			cmd.Dir = targetDirectory
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 			err := cmd.Run()
 			if err != nil {
 				logger.Errorf("Failed to clone %s: %s", proj, err)
@@ -94,6 +96,8 @@ func action(c *cli.Context) error {
 			logger.Infof("Fetching %s", proj)
 			cmd := exec.Command("git", "fetch", "origin")
 			cmd.Dir = dir
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 			err := cmd.Run()
 			if err != nil {
 				logger.Errorf("Failed to fetch %s: %s", proj, err)
