@@ -92,15 +92,15 @@ func action(c *cli.Context) error {
 				return nil
 			}
 		} else {
-			// fetch if exists
-			logger.Infof("Fetching %s", proj)
-			cmd := exec.Command("git", "fetch", "origin")
+			// pull if exists
+			logger.Infof("Pulling %s", proj)
+			cmd := exec.Command("git", "pull", "origin")
 			cmd.Dir = dir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			err := cmd.Run()
+			err = cmd.Run()
 			if err != nil {
-				logger.Errorf("Failed to fetch %s: %s", proj, err)
+				logger.Errorf("Failed to pull %s: %s", proj, err)
 				return nil
 			}
 		}
