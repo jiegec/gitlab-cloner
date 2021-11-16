@@ -89,7 +89,6 @@ func action(c *cli.Context) error {
 			err := cmd.Run()
 			if err != nil {
 				logger.Errorf("Failed to clone %s: %s", proj, err)
-				return nil
 			}
 		} else {
 			// pull if exists
@@ -101,7 +100,6 @@ func action(c *cli.Context) error {
 			err = cmd.Run()
 			if err != nil {
 				logger.Errorf("Failed to pull %s: %s", proj, err)
-				return nil
 			}
 		}
 	}
