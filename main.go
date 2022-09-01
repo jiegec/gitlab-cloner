@@ -64,11 +64,12 @@ func listProjects(host string, group string, accessToken string) ([]string, erro
 func action(c *cli.Context) error {
 	loggo.ConfigureLoggers("gitlab-cloner=INFO")
 	group := c.String("group")
+	gid := c.String("gid")
 	host := c.String("host")
 	accessToken := c.String("access-token")
 	targetDirectory := c.String("target-directory")
 
-	projects, err := listProjects(host, group, accessToken)
+	projects, err := listProjects(host, gid, accessToken)
 	if err != nil {
 		logger.Errorf("Failed to list projects: %s", err)
 		return nil
@@ -115,6 +116,12 @@ func main() {
 				Name:     "group",
 				Aliases:  []string{"g"},
 				Usage:    "GitLab group name",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "gid",
+				Aliases:  []string{"G"},
+				Usage:    "GitLab group id",
 				Required: true,
 			},
 			&cli.StringFlag{
