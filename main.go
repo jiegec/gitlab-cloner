@@ -34,7 +34,7 @@ func listProjects(host string, group string, accessToken string) ([]string, erro
 		q := req.URL.Query()
 		q.Add("access_token", accessToken)
 		q.Add("page", fmt.Sprintf("%d", i))
-		q.Add("per_page", "100")
+		q.Add("per_page", "10")
 		req.URL.RawQuery = q.Encode()
 
 		resp, err := client.Do(req)
