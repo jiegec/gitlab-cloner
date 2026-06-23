@@ -20,6 +20,53 @@ type Project struct {
 	Name string `json:"name"`
 }
 
+type Group struct {
+	ID   int    `json:"id"`
+	Path string `json:"path"`
+}
+
+func lookupGroupID(host string, group string, accessToken string) (string, error) {
+	client := &http.Client{}
+	url := fmt.Sprintf("https://%s/api/v4/groups", host)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to create request")
+	}
+
+	q := req.URL.Query()
+	q.Add("search", group)
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to access gitlab")
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to read from resp")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("API error: %s", string(body))
+	}
+
+	var groups []Group
+	err = json.Unmarshal(body, &groups)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to parse group response")
+	}
+	for _, grp := range groups {
+		if grp.Path == group {
+			return fmt.Sprintf("%d", grp.ID), nil
+		}
+	}
+	return "", errors.Errorf("Group %s not found", group)
+}
+
 func listProjects(host string, group string, accessToken string) ([]string, error) {
 	client := &http.Client{}
 	// NOTE: we can use Link header for pagination
@@ -31,8 +78,9 @@ func listProjects(host string, group string, accessToken string) ([]string, erro
 			return nil, errors.Wrap(err, "Failed to create request")
 		}
 
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+
 		q := req.URL.Query()
-		q.Add("access_token", accessToken)
 		q.Add("page", fmt.Sprintf("%d", i))
 		q.Add("per_page", "10")
 		req.URL.RawQuery = q.Encode()
@@ -64,10 +112,16 @@ func listProjects(host string, group string, accessToken string) ([]string, erro
 func action(c *cli.Context) error {
 	loggo.ConfigureLoggers("gitlab-cloner=INFO")
 	group := c.String("group")
-	gid := c.String("gid")
 	host := c.String("host")
 	accessToken := c.String("access-token")
 	targetDirectory := c.String("target-directory")
+
+	gid, err := lookupGroupID(host, group, accessToken)
+	if err != nil {
+		logger.Errorf("Failed to look up group ID: %s", err)
+		return nil
+	}
+	logger.Infof("Resolved group %s to gid %s", group, gid)
 
 	projects, err := listProjects(host, gid, accessToken)
 	if err != nil {
@@ -116,12 +170,6 @@ func main() {
 				Name:     "group",
 				Aliases:  []string{"g"},
 				Usage:    "GitLab group name",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "gid",
-				Aliases:  []string{"G"},
-				Usage:    "GitLab group id",
 				Required: true,
 			},
 			&cli.StringFlag{
